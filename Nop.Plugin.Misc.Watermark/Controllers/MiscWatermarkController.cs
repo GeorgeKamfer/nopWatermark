@@ -21,7 +21,7 @@ using SkiaSharp;
 
 namespace Nop.Plugin.Misc.Watermark.Controllers
 {
-    [Area(AreaNames.Admin)]
+    [Area(AreaNames.ADMIN)]
     public class MiscWatermarkController : BasePluginController
     {
         private readonly IStoreContext _storeContext;

@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35825.156 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nop.Plugin.Misc.Watermark", "Nop.Plugin.Misc.Watermark\Nop.Plugin.Misc.Watermark.csproj", "{DA90889A-E8D9-9B87-189D-F9A62DA6E855}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nop.Web.Framework", "..\nopCommerce\src\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj", "{C6BCC3C4-F24B-9699-0475-613F801EF842}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA90889A-E8D9-9B87-189D-F9A62DA6E855}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA90889A-E8D9-9B87-189D-F9A62DA6E855}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA90889A-E8D9-9B87-189D-F9A62DA6E855}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA90889A-E8D9-9B87-189D-F9A62DA6E855}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6BCC3C4-F24B-9699-0475-613F801EF842}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6BCC3C4-F24B-9699-0475-613F801EF842}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6BCC3C4-F24B-9699-0475-613F801EF842}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6BCC3C4-F24B-9699-0475-613F801EF842}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BED347F9-A7B0-4B78-A158-00DA8F1EF584}
+	EndGlobalSection
+EndGlobal

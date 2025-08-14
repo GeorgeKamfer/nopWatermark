@@ -38,36 +38,37 @@ namespace Nop.Plugin.Misc.Watermark.Services
         private bool IsPluginInstalled => _pluginService.GetPluginDescriptorBySystemNameAsync<WatermarkPlugin>("Misc.Watermark") != null;
 
         public MiscWatermarkPictureService(
-            IRepository<Picture> pictureRepository,
-            IRepository<Category> categoryRepository,
-            IRepository<Manufacturer> manufacturerRepository,
-            IRepository<ProductPicture> productPictureRepository,
-            ISettingService settingService,
-            IWebHelper webHelper,
-            MediaSettings mediaSettings,
-            IStoreContext storeContext,
-            INopFileProvider fileProvider,
-            IProductAttributeParser productAttributeParser,
-            IRepository<PictureBinary> pictureBinaryRepository,
-            IUrlRecordService urlRecordService,
-            IDownloadService downloadService,
-            IHttpContextAccessor httpContextAccessor,
-            ILogger logger,
-            IPluginService pluginService,
-            FontProvider fontProvider)
-            : base(
-                downloadService,
-                httpContextAccessor,
-                logger,
-                fileProvider,
-                productAttributeParser,
-                pictureRepository,
-                pictureBinaryRepository,
-                productPictureRepository,
-                settingService,
-                urlRecordService,
-                webHelper,
-                mediaSettings)
+           IRepository<Picture> pictureRepository,
+           IRepository<Category> categoryRepository,
+           IRepository<Manufacturer> manufacturerRepository,
+           IRepository<ProductPicture> productPictureRepository,
+           ISettingService settingService,
+           IWebHelper webHelper,
+           MediaSettings mediaSettings,
+           IStoreContext storeContext,
+           INopFileProvider fileProvider,
+           IProductAttributeParser productAttributeParser,
+           IRepository<PictureBinary> pictureBinaryRepository,
+           IUrlRecordService urlRecordService,
+           IDownloadService downloadService,
+           IHttpContextAccessor httpContextAccessor,
+           ILogger logger,
+           IPluginService pluginService,
+           FontProvider fontProvider)
+           : base(
+               downloadService,
+               httpContextAccessor,
+               logger,
+               fileProvider,
+               productAttributeParser,
+               null, // Fix: Pass null for the missing IProductAttributeService parameter
+               pictureRepository,
+               pictureBinaryRepository,
+               productPictureRepository,
+               settingService,
+               urlRecordService,
+               webHelper,
+               mediaSettings)
         {
             _categoryRepository = categoryRepository;
             _manufacturerRepository = manufacturerRepository;
