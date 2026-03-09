@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -172,6 +172,14 @@ namespace Nop.Plugin.Misc.Watermark.Services
 
             pictureBinary ??= await LoadPictureBinaryAsync(picture);
 
+            // guard: no data to decode
+            if (pictureBinary == null || pictureBinary.Length == 0)
+            {
+                // fall back to saving whatever we have (no watermark) so the page doesn't crash
+                SaveThumbAsync(thumbFilePath, thumbFileName, picture?.MimeType ?? string.Empty, pictureBinary ?? Array.Empty<byte>()).Wait();
+                return (await GetThumbUrlAsync(thumbFileName, storeLocation), picture);
+            }
+
             //the named mutex helps to avoid creating the same files in different threads,
             //and does not decrease performance significantly, because the code is blocked only for the specific file.
             //you should be very careful, mutexes cannot be used in with the await operation
@@ -180,38 +188,57 @@ namespace Nop.Plugin.Misc.Watermark.Services
             mutex.WaitOne();
             try
             {
-                // There is no sense of placing watermark on SVG image
-                if (picture.MimeType != MimeTypes.ImageSvg)
+                try
                 {
-                    using var inputImage = SKBitmap.Decode(pictureBinary);
-                    SKBitmap outputImage = inputImage;
+                    // There is no sense of placing watermark on SVG image
+                    if (picture.MimeType != MimeTypes.ImageSvg)
+                    {
+                        using var inputImage = SKBitmap.Decode(pictureBinary);
 
-                    if (targetSize != 0) //resizing required
-                        try
+                        // guard: decode failed (unsupported or corrupt image)
+                        if (inputImage == null)
                         {
-                            var newSize =
-                                ScaleRectangleToFitBounds(new SKSizeI(targetSize, targetSize), inputImage.Info.Size);
-                            outputImage = inputImage.Resize(newSize, SKFilterQuality.Medium);
+                            // just save the original bytes without watermark
+                            SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary).Wait();
                         }
-                        catch
+                        else
                         {
-                            // ignored
+                            SKBitmap outputImage = inputImage;
+
+                            if (targetSize != 0) //resizing required
+                                try
+                                {
+                                    var newSize =
+                                        ScaleRectangleToFitBounds(new SKSizeI(targetSize, targetSize), inputImage.Info.Size);
+                                    outputImage = inputImage.Resize(newSize, SKFilterQuality.Medium);
+                                }
+                                catch
+                                {
+                                    // ignored
+                                }
+
+                            MakeImageWatermarkAsync(outputImage, picture.Id).Wait();
+
+                            var format = GetImageFormatByMimeType(picture.MimeType);
+                            pictureBinary = outputImage.Encode(format,
+                                _mediaSettings.DefaultImageQuality > 0 ? _mediaSettings.DefaultImageQuality : 80).ToArray();
+
+                            outputImage.Dispose();
+
+                            SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary).Wait();
                         }
-
-                    MakeImageWatermarkAsync(outputImage, picture.Id).Wait();
-
-                    var format = GetImageFormatByMimeType(picture.MimeType);
-                    pictureBinary = outputImage.Encode(format,
-                        _mediaSettings.DefaultImageQuality > 0 ? _mediaSettings.DefaultImageQuality : 80).ToArray();
-
-                    outputImage.Dispose();
-
+                    }
+                    else
+                    {
+                        // SVG: nothing to watermark, just persist the original bytes
+                        SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary).Wait();
+                    }
+                }
+                catch
+                {
+                    // any SkiaSharp or processing failure: fall back to original bytes so the page still works
                     SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary).Wait();
                 }
-                else
-                {
-                    SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary).Wait();
-                }               
             }
             finally
             {
@@ -425,6 +452,40 @@ namespace Nop.Plugin.Misc.Watermark.Services
             return _fontProvider.AvailableFonts.Any()
                 ? _fontProvider.GetTypeface(_fontProvider.AvailableFonts.First())
                 : throw new InvalidOperationException("Fonts are missing");
+        }
+
+        /// <summary>
+        /// Overrides the base implementation to guard against two crash scenarios that can
+        /// occur on the order-details page when an order was placed and later the product's
+        /// attribute values were deleted:
+        ///
+        ///   1. product is null  — the product itself was deleted after the order was placed.
+        ///      The base method calls ArgumentNullException.ThrowIfNull(product) which would
+        ///      surface as an unhandled exception.  We return null so nopCommerce shows the
+        ///      default "no image" placeholder instead of an error page.
+        ///
+        ///   2. attributeValue is null  — ParseProductAttributeValuesAsync returns null entries
+        ///      for attribute value IDs that no longer exist in the database (deleted after the
+        ///      order was placed).  The base foreach does not guard for null, so it throws a
+        ///      NullReferenceException at line 1111 of PictureService.cs.  We catch that here
+        ///      and fall back to the product's default (first) picture.
+        /// </summary>
+        public override async Task<Nop.Core.Domain.Media.Picture> GetProductPictureAsync(
+            Nop.Core.Domain.Catalog.Product product, string attributesXml)
+        {
+            if (product == null)
+                return null;
+
+            try
+            {
+                return await base.GetProductPictureAsync(product, attributesXml);
+            }
+            catch (NullReferenceException)
+            {
+                // One or more product attribute values referenced in AttributesXml were
+                // deleted after this order was placed.  Fall back to the product's main picture.
+                return (await GetPicturesByProductIdAsync(product.Id, 1)).FirstOrDefault();
+            }
         }
 
         #region IDisposable
