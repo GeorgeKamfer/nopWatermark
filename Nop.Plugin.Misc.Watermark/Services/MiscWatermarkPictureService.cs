@@ -35,7 +35,17 @@ namespace Nop.Plugin.Misc.Watermark.Services
         private readonly AsyncLazy<SKImage> _watermarkImage;
         
 
-        private bool IsPluginInstalled => _pluginService.GetPluginDescriptorBySystemNameAsync<WatermarkPlugin>("Misc.Watermark") != null;
+        private bool IsPluginInstalled
+        {
+            get
+            {
+                // This call is asynchronous under the hood; use GetAwaiter().GetResult()
+                // to obtain the result in this rare, non-request-bound check.
+                var descriptorTask = _pluginService.GetPluginDescriptorBySystemNameAsync<WatermarkPlugin>("Misc.Watermark");
+                var descriptor = descriptorTask?.GetAwaiter().GetResult();
+                return descriptor != null;
+            }
+        }
 
         public MiscWatermarkPictureService(
            IRepository<Picture> pictureRepository,

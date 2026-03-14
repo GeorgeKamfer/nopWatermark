@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -21,7 +21,9 @@ using SkiaSharp;
 
 namespace Nop.Plugin.Misc.Watermark.Controllers
 {
+    [AuthorizeAdmin]
     [Area(AreaNames.ADMIN)]
+    [AutoValidateAntiforgeryToken]
     public class MiscWatermarkController : BasePluginController
     {
         private readonly IStoreContext _storeContext;
@@ -139,6 +141,7 @@ namespace Nop.Plugin.Misc.Watermark.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Configure(ConfigurationModel model)
         {
             if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
