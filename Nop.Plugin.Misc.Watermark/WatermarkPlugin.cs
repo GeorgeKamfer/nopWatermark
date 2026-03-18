@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -98,7 +98,7 @@ namespace Nop.Plugin.Misc.Watermark
 
             await new ClearCacheTask(EngineContext.Current.Resolve<IStaticCacheManager>()).ExecuteAsync();
             if (EngineContext.Current.Resolve<IPictureService>() is MiscWatermarkPictureService pictureService)
-                pictureService.DeleteThumbs().Wait();
+                await pictureService.DeleteThumbs();
 
             await base.UninstallAsync();
         }

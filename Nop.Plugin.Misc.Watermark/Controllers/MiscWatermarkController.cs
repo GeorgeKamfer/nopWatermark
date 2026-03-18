@@ -18,6 +18,7 @@ using Nop.Services.Security;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using SkiaSharp;
+using Nop.Web.Framework.Mvc.Filters;
 
 namespace Nop.Plugin.Misc.Watermark.Controllers
 {
@@ -179,7 +180,7 @@ namespace Nop.Plugin.Misc.Watermark.Controllers
             settings.ApplyOnCategoryPictures = model.ApplyOnCategoryPictures;
             settings.ApplyOnManufacturerPictures = model.ApplyOnManufacturerPictures;
             settings.MinimumImageHeightForWatermark = model.MinimumImageHeightForWatermark;
-            settings.MinimumImageWidthForWatermark = model.MinimumImageHeightForWatermark;
+            settings.MinimumImageWidthForWatermark = model.MinimumImageWidthForWatermark;
 
             await _settingService.SaveSettingOverridablePerStoreAsync(settings,
                 x => x.WatermarkTextEnable, model.WatermarkTextEnable_OverrideForStore, activeStoreScope, false);

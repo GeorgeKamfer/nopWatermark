@@ -35,16 +35,10 @@ namespace Nop.Plugin.Misc.Watermark.Services
         private readonly AsyncLazy<SKImage> _watermarkImage;
         
 
-        private bool IsPluginInstalled
+        private async Task<bool> IsPluginInstalledAsync()
         {
-            get
-            {
-                // This call is asynchronous under the hood; use GetAwaiter().GetResult()
-                // to obtain the result in this rare, non-request-bound check.
-                var descriptorTask = _pluginService.GetPluginDescriptorBySystemNameAsync<WatermarkPlugin>("Misc.Watermark");
-                var descriptor = descriptorTask?.GetAwaiter().GetResult();
-                return descriptor != null;
-            }
+            var descriptor = await _pluginService.GetPluginDescriptorBySystemNameAsync<WatermarkPlugin>("Misc.Watermark");
+            return descriptor != null;
         }
 
         public MiscWatermarkPictureService(
@@ -98,6 +92,8 @@ namespace Nop.Plugin.Misc.Watermark.Services
                     return null;
 
                 var picture = await base.GetPictureByIdAsync(watermarkPictureId);
+                if (picture == null)
+                    return null;
                 var pictureBinary = await LoadPictureBinaryAsync(picture);
                 return SKImage.FromEncodedData(pictureBinary);
             });
@@ -121,7 +117,7 @@ namespace Nop.Plugin.Misc.Watermark.Services
             string storeLocation = null,
             PictureType defaultPictureType = PictureType.Entity)
         {
-            if (!IsPluginInstalled)
+            if (!await IsPluginInstalledAsync())
                 return await base.GetPictureUrlAsync(picture, targetSize, showDefaultPicture, storeLocation, defaultPictureType);
 
             if (picture == null)
@@ -186,7 +182,7 @@ namespace Nop.Plugin.Misc.Watermark.Services
             if (pictureBinary == null || pictureBinary.Length == 0)
             {
                 // fall back to saving whatever we have (no watermark) so the page doesn't crash
-                SaveThumbAsync(thumbFilePath, thumbFileName, picture?.MimeType ?? string.Empty, pictureBinary ?? Array.Empty<byte>()).Wait();
+                await SaveThumbAsync(thumbFilePath, thumbFileName, picture?.MimeType ?? string.Empty, pictureBinary ?? Array.Empty<byte>());
                 return (await GetThumbUrlAsync(thumbFileName, storeLocation), picture);
             }
 
@@ -209,7 +205,7 @@ namespace Nop.Plugin.Misc.Watermark.Services
                         if (inputImage == null)
                         {
                             // just save the original bytes without watermark
-                            SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary).Wait();
+                            await SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary);
                         }
                         else
                         {
@@ -222,12 +218,12 @@ namespace Nop.Plugin.Misc.Watermark.Services
                                         ScaleRectangleToFitBounds(new SKSizeI(targetSize, targetSize), inputImage.Info.Size);
                                     outputImage = inputImage.Resize(newSize, SKFilterQuality.Medium);
                                 }
-                                catch
+                                catch (Exception ex)
                                 {
-                                    // ignored
+                                    await _logger.WarningAsync($"Error resizing image for watermark (picture Id {picture.Id}): {ex.Message}", ex);
                                 }
 
-                            MakeImageWatermarkAsync(outputImage, picture.Id).Wait();
+                            await MakeImageWatermarkAsync(outputImage, picture.Id);
 
                             var format = GetImageFormatByMimeType(picture.MimeType);
                             pictureBinary = outputImage.Encode(format,
@@ -235,19 +231,20 @@ namespace Nop.Plugin.Misc.Watermark.Services
 
                             outputImage.Dispose();
 
-                            SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary).Wait();
+                            await SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary);
                         }
                     }
                     else
                     {
                         // SVG: nothing to watermark, just persist the original bytes
-                        SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary).Wait();
+                        await SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
                     // any SkiaSharp or processing failure: fall back to original bytes so the page still works
-                    SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary).Wait();
+                    await _logger.ErrorAsync($"Error during watermark operation (picture Id {picture?.Id}): {ex.Message}", ex);
+                    await SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary);
                 }
             }
             finally
@@ -490,10 +487,10 @@ namespace Nop.Plugin.Misc.Watermark.Services
             {
                 return await base.GetProductPictureAsync(product, attributesXml);
             }
-            catch (NullReferenceException)
+            catch (NullReferenceException ex)
             {
-                // One or more product attribute values referenced in AttributesXml were
-                // deleted after this order was placed.  Fall back to the product's main picture.
+                await _logger.WarningAsync(
+                    $"Product {product.Id}: attribute value referenced in AttributesXml no longer exists, falling back to main picture: {ex.Message}", ex);
                 return (await GetPicturesByProductIdAsync(product.Id, 1)).FirstOrDefault();
             }
         }
@@ -503,7 +500,11 @@ namespace Nop.Plugin.Misc.Watermark.Services
         private void ReleaseUnmanagedResources()
         {
             if (_watermarkImage.IsStarted)
-                _watermarkImage.Task.Result.Dispose();
+            {
+                // Dispose cannot be async; GetAwaiter().GetResult() is the safest sync-over-async pattern in this context.
+                var image = _watermarkImage.Task.GetAwaiter().GetResult();
+                image?.Dispose();
+            }
         }
 
         public void Dispose()

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -152,8 +152,9 @@ namespace Nop.Plugin.Misc.Watermark.Services
                 return await _staticCacheManager.GetAsync(key,
                     async () => await _blobContainerClient.GetBlobClient(thumbFileName).ExistsAsync());
             }
-            catch
+            catch (Exception ex)
             {
+                await _logger.WarningAsync($"Azure blob thumb check failed for '{thumbFileName}': {ex.Message}", ex);
                 return false;
             }
         }
