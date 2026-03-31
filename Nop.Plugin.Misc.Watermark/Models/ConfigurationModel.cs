@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Web.Framework.Mvc.ModelBinding;
@@ -34,8 +34,15 @@ namespace Nop.Plugin.Misc.Watermark.Models
         public bool WatermarkTextRotatedDegree_OverrideForStore { get; set; }
 
         public CommonWatermarkSettings TextSettings { get; set; }
-
         public bool TextSettings_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.TextOutlineEnabled")]
+        public bool TextOutlineEnabled { get; set; }
+        public bool TextOutlineEnabled_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.TextOutlineColor")]
+        public string TextOutlineColor { get; set; }
+        public bool TextOutlineColor_OverrideForStore { get; set; }
 
         #endregion
 
@@ -52,6 +59,40 @@ namespace Nop.Plugin.Misc.Watermark.Models
 
         public CommonWatermarkSettings PictureSettings { get; set; }
         public bool PictureSettings_OverrideForStore { get; set; }
+
+        #endregion
+
+        #region Brand Strip
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.BrandStripEnabled")]
+        public bool BrandStripEnabled { get; set; }
+        public bool BrandStripEnabled_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.BrandStripPosition")]
+        public int BrandStripPlacement { get; set; }
+        public bool BrandStripPlacement_OverrideForStore { get; set; }
+        public List<SelectListItem> AvailableBrandStripPositions { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.BrandStripHeight")]
+        public int BrandStripHeight { get; set; }
+        public bool BrandStripHeight_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.BrandStripColor")]
+        public string BrandStripColor { get; set; }
+        public bool BrandStripColor_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.BrandStripOpacity")]
+        public double BrandStripOpacity { get; set; }
+        public bool BrandStripOpacity_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.BrandStripText")]
+        public string BrandStripText { get; set; }
+        public bool BrandStripText_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.BrandStripTextColor")]
+        public string BrandStripTextColor { get; set; }
+        public bool BrandStripTextColor_OverrideForStore { get; set; }
+
         #endregion
 
         #region Common
@@ -76,9 +117,17 @@ namespace Nop.Plugin.Misc.Watermark.Models
         public bool ApplyOnManufacturerPictures { get; set; }
         public bool ApplyOnManufacturerPictures_OverrideForStore { get; set; }
 
+        [NopResourceDisplayName("Plugins.Misc.Watermark.MinimumWatermarkSizePx")]
+        public int MinimumWatermarkSizePx { get; set; }
+        public bool MinimumWatermarkSizePx_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.MaximumWatermarkSizePx")]
+        public int MaximumWatermarkSizePx { get; set; }
+        public bool MaximumWatermarkSizePx_OverrideForStore { get; set; }
+
         #endregion
     }
-    
+
     public class CommonWatermarkSettings
     {
         [NopResourceDisplayName("Plugins.Misc.Watermark.Size")]
@@ -124,5 +173,25 @@ namespace Nop.Plugin.Misc.Watermark.Models
         [NopResourceDisplayName("Plugins.Misc.Watermark.WatermarkOpacity")]
         public double Opacity { get; set; }
         public bool Opacity_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.PaddingX")]
+        public int PaddingX { get; set; }
+        public bool PaddingX_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.PaddingY")]
+        public int PaddingY { get; set; }
+        public bool PaddingY_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.UseCustomPosition")]
+        public bool UseCustomPosition { get; set; }
+        public bool UseCustomPosition_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.CustomX")]
+        public double CustomX { get; set; }
+        public bool CustomX_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Misc.Watermark.CustomY")]
+        public double CustomY { get; set; }
+        public bool CustomY_OverrideForStore { get; set; }
     }
 }

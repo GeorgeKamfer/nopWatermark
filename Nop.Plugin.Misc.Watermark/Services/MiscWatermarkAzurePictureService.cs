@@ -15,10 +15,10 @@ using Nop.Data;
 using Nop.Plugin.Misc.Watermark.Infrastructure;
 using Nop.Services.Catalog;
 using Nop.Services.Configuration;
-using Nop.Services.Media;
-using Nop.Services.Seo;
-using Nop.Services.Plugins;
 using Nop.Services.Logging;
+using Nop.Services.Media;
+using Nop.Services.Plugins;
+using Nop.Services.Seo;
 
 namespace Nop.Plugin.Misc.Watermark.Services
 {
@@ -55,6 +55,7 @@ namespace Nop.Plugin.Misc.Watermark.Services
             ILogger logger,
             IPluginService pluginService,
             FontProvider fontProvider,
+            IProductAttributeService productAttributeService,
             IStaticCacheManager staticCacheManager,
             AppSettings appSettings)
             : base(pictureRepository,
@@ -73,7 +74,8 @@ namespace Nop.Plugin.Misc.Watermark.Services
                 httpContextAccessor,
                 logger,
                 pluginService,
-                fontProvider)
+                fontProvider,
+                productAttributeService)
         {
             _staticCacheManager = staticCacheManager;
             _mediaSettings = mediaSettings;

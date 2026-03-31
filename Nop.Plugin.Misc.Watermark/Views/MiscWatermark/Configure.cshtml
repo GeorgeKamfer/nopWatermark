@@ -1,4 +1,5 @@
-﻿@model Nop.Plugin.Misc.Watermark.Models.ConfigurationModel
+@using System.Globalization
+@model Nop.Plugin.Misc.Watermark.Models.ConfigurationModel
 @{
     Layout = "_ConfigurePlugin";
 }
@@ -8,482 +9,583 @@
 <link rel="stylesheet" href="~/Plugins/Misc.Watermark/Content/watermark.css" />
 
 @await Component.InvokeAsync("StoreScopeConfiguration")
-<form asp-controller="MiscWatermark" asp-action="Configure" method="post">
+<form asp-controller="MiscWatermark" asp-action="Configure" method="post" id="watermarkConfigForm">
     <section class="content">
         <div class="container-fluid">
-            <div class="cards-group">
-                <div class="card card-default">
-                    <div class="card-header">
-                        @T("Plugins.Misc.Watermark.Text")
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group row">
-                            <div class="col-md-3">
-                                <nop-override-store-checkbox asp-for="WatermarkTextEnable_OverrideForStore" asp-input="WatermarkTextEnable" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                <nop-label asp-for="WatermarkTextEnable" />
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="cards-group">
+
+                        @* ==================== TEXT WATERMARK ==================== *@
+                        <div class="card card-default">
+                            <div class="card-header">
+                                <i class="fas fa-font mr-1"></i> @T("Plugins.Misc.Watermark.Text")
                             </div>
-                            <div class="col-md-9">
-                                <nop-editor asp-for="WatermarkTextEnable" />
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-3">
-                                <nop-override-store-checkbox asp-for="Text_OverrideForStore" asp-input="WatermarkText" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                <nop-label asp-for="WatermarkText" />
-                            </div>
-                            <div class="col-md-9">
-                                <nop-editor asp-for="WatermarkText" />
-                                <span asp-validation-for="WatermarkText"></span>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-3">
-                                <nop-override-store-checkbox asp-for="WatermarkFont_OverrideForStore" asp-input="WatermarkFont" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                <nop-label asp-for="WatermarkFont" />
-                            </div>
-                            <div class="col-md-9">
-                                <nop-select asp-for="WatermarkFont" asp-items="Model.AvailableFontsList" />
-                                <span asp-validation-for="WatermarkFont"></span>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-3">
-                                <nop-override-store-checkbox asp-for="TextColor_OverrideForStore" asp-input="TextColor" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                <nop-label asp-for="TextColor" />
-                            </div>
-                            <div class="col-md-9">
-                                <input asp-for="TextColor" class="jscolor form-control" />
-                                <span asp-validation-for="TextColor"></span>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <nop-override-store-checkbox asp-for="TextSettings_OverrideForStore" asp-parent-container="textsettings_group" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                        </div>
-                        <div id="textsettings_group">
-                            <div class="form-group row">
-                                <div class="col-md-3">
-                                    <nop-label asp-for="TextSettings.Size" />
-                                </div>
-                                <div class="col-md-9">
-                                    <nop-editor asp-for="TextSettings.Size" />
-                                    <span asp-validation-for="TextSettings.Size"></span>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <div class="col-md-3">
-                                    <div class="label-wrapper">
-                                        <label class="control-label">
-                                            @T("Plugins.Misc.Watermark.WatermarkPosition")
-                                        </label>
+                            <div class="card-body">
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="WatermarkTextEnable_OverrideForStore" asp-input="WatermarkTextEnable" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="WatermarkTextEnable" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="WatermarkTextEnable" />
                                     </div>
                                 </div>
-                                <div class="col-md-9">
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="Text_OverrideForStore" asp-input="WatermarkText" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="WatermarkText" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="WatermarkText" />
+                                        <span asp-validation-for="WatermarkText"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="WatermarkFont_OverrideForStore" asp-input="WatermarkFont" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="WatermarkFont" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-select asp-for="WatermarkFont" asp-items="Model.AvailableFontsList" />
+                                        <span asp-validation-for="WatermarkFont"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="TextColor_OverrideForStore" asp-input="TextColor" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="TextColor" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input asp-for="TextColor" class="jscolor form-control" />
+                                        <span asp-validation-for="TextColor"></span>
+                                    </div>
+                                </div>
+
+                                @* Text Outline *@
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="TextOutlineEnabled_OverrideForStore" asp-input="TextOutlineEnabled" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="TextOutlineEnabled" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="TextOutlineEnabled" />
+                                    </div>
+                                </div>
+                                <div class="form-group row" id="textOutlineColorRow">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="TextOutlineColor_OverrideForStore" asp-input="TextOutlineColor" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="TextOutlineColor" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input asp-for="TextOutlineColor" class="jscolor form-control" />
+                                    </div>
+                                </div>
+
+                                <div class="form-group row">
+                                    <nop-override-store-checkbox asp-for="TextSettings_OverrideForStore" asp-parent-container="textsettings_group" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                </div>
+                                <div id="textsettings_group">
+                                    @* Size *@
                                     <div class="form-group row">
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="TextSettings.TopLeftCorner" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="TextSettings.TopLeftCorner" />
-                                                </div>
-                                            </div>
+                                        <div class="col-md-3">
+                                            <nop-label asp-for="TextSettings.Size" />
                                         </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="TextSettings.TopCenter" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="TextSettings.TopCenter" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="TextSettings.TopRightCorner" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="TextSettings.TopRightCorner" />
-                                                </div>
-                                            </div>
+                                        <div class="col-md-9">
+                                            <nop-editor asp-for="TextSettings.Size" />
+                                            <span asp-validation-for="TextSettings.Size"></span>
                                         </div>
                                     </div>
+
+                                    @* Visual Position Grid *@
                                     <div class="form-group row">
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="TextSettings.CenterLeft" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="TextSettings.CenterLeft" />
-                                                </div>
+                                        <div class="col-md-3">
+                                            <div class="label-wrapper">
+                                                <label class="control-label">@T("Plugins.Misc.Watermark.WatermarkPosition")</label>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="TextSettings.Center" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="TextSettings.Center" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="TextSettings.CenterRight" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="TextSettings.CenterRight" />
-                                                </div>
-                                            </div>
+                                        <div class="col-md-9">
+                                            @await Html.PartialAsync("~/Plugins/Misc.Watermark/Views/MiscWatermark/_PositionGrid.cshtml",
+                                                new ViewDataDictionary(ViewData) { { "Prefix", "TextSettings" }, { "Settings", Model.TextSettings } })
                                         </div>
                                     </div>
+
+                                    @* Padding *@
                                     <div class="form-group row">
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="TextSettings.BottomLeftCorner" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="TextSettings.BottomLeftCorner" />
-                                                </div>
+                                        <div class="col-md-3">
+                                            <div class="label-wrapper">
+                                                <label class="control-label">@T("Plugins.Misc.Watermark.PaddingX")</label>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="TextSettings.BottomCenter" />
+                                        <div class="col-md-9">
+                                            <div class="padding-group">
+                                                <div class="padding-input">
+                                                    <label>X:</label>
+                                                    <input asp-for="TextSettings.PaddingX" class="form-control" type="number" min="0" />
                                                 </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="TextSettings.BottomCenter" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="TextSettings.BottomRightCorner" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="TextSettings.BottomRightCorner" />
+                                                <div class="padding-input">
+                                                    <label>Y:</label>
+                                                    <input asp-for="TextSettings.PaddingY" class="form-control" type="number" min="0" />
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <div class="col-md-3">
-                                    <nop-override-store-checkbox asp-for="WatermarkTextRotatedDegree_OverrideForStore" asp-input="TextRotatedDegree" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                    <nop-label asp-for="TextRotatedDegree" />
-                                </div>
-                                <div class="col-md-9">
-                                    <input asp-for="TextRotatedDegree" class="dial" />
-                                    <span asp-validation-for="TextRotatedDegree"></span>
-                                    <script>
-                                        $(function () {
-                                            $('.dial').knob({
-                                                'min': 0,
-                                                'max': 360,
-                                                'angleOffset': -90,
-                                                'cursor': true
-                                            });
-                                        });
-                                    </script>
+
+                                    @* Custom Position *@
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-label asp-for="TextSettings.UseCustomPosition" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <input asp-for="TextSettings.UseCustomPosition" type="checkbox" class="custom-position-toggle" data-target="textCustomFields" />
+                                            <div id="textCustomFields" class="custom-position-fields @(Model.TextSettings.UseCustomPosition ? "visible" : "")">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label>X (%):</label>
+                                                        <input asp-for="TextSettings.CustomX" class="form-control" type="number" min="0" max="100" step="1" />
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label>Y (%):</label>
+                                                        <input asp-for="TextSettings.CustomY" class="form-control" type="number" min="0" max="100" step="1" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @* Opacity Slider *@
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-label asp-for="TextSettings.Opacity" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="opacity-slider-group">
+                                                <input type="range" min="0" max="1" step="0.05"
+                                                       value="@Model.TextSettings.Opacity.ToString(CultureInfo.InvariantCulture)"
+                                                       data-target="TextSettings_Opacity"
+                                                       class="opacity-slider" />
+                                                <span class="opacity-value" id="textOpacityDisplay">@Model.TextSettings.Opacity.ToString("F2", CultureInfo.InvariantCulture)</span>
+                                                <input type="hidden" id="TextSettings_Opacity" name="TextSettings.Opacity"
+                                                       value="@Model.TextSettings.Opacity.ToString(CultureInfo.InvariantCulture)" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @* Rotation *@
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-override-store-checkbox asp-for="WatermarkTextRotatedDegree_OverrideForStore" asp-input="TextRotatedDegree" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                            <nop-label asp-for="TextRotatedDegree" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <input asp-for="TextRotatedDegree" class="dial" />
+                                            <span asp-validation-for="TextRotatedDegree"></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group row">
-                            <div class="col-md-3">
-                                <nop-label asp-for="TextSettings.Opacity" />
+
+                        @* ==================== PICTURE WATERMARK ==================== *@
+                        <div class="card card-default">
+                            <div class="card-header">
+                                <i class="fas fa-image mr-1"></i> @T("Plugins.Misc.Watermark.Picture")
                             </div>
-                            <div class="col-md-9">
-                                <nop-editor asp-for="TextSettings.Opacity" />
-                                <span asp-validation-for="TextSettings.Opacity"></span>
+                            <div class="card-body">
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="WatermarkPictureEnable_OverrideForStore" asp-input="WatermarkPictureEnable" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="WatermarkPictureEnable" />
+                                    </div>
+                                    <div class="col-md-9 watermark-picture">
+                                        <nop-editor asp-for="WatermarkPictureEnable" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="WatermarkPictureId_OverrideForStore" asp-input="PictureId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="PictureId" />
+                                    </div>
+                                    <div class="col-md-9 watermark-picture">
+                                        <nop-editor asp-for="PictureId" />
+                                        <span asp-validation-for="PictureId"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <nop-override-store-checkbox asp-for="PictureSettings_OverrideForStore" asp-parent-container="picturesettings_group" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                </div>
+                                <div id="picturesettings_group">
+                                    @* Size *@
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-label asp-for="PictureSettings.Size" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <nop-editor asp-for="PictureSettings.Size" />
+                                            <span asp-validation-for="PictureSettings.Size"></span>
+                                        </div>
+                                    </div>
+
+                                    @* Visual Position Grid *@
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <div class="label-wrapper">
+                                                <label class="control-label">@T("Plugins.Misc.Watermark.WatermarkPosition")</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-9">
+                                            @await Html.PartialAsync("~/Plugins/Misc.Watermark/Views/MiscWatermark/_PositionGrid.cshtml",
+                                                new ViewDataDictionary(ViewData) { { "Prefix", "PictureSettings" }, { "Settings", Model.PictureSettings } })
+                                        </div>
+                                    </div>
+
+                                    @* Padding *@
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <div class="label-wrapper">
+                                                <label class="control-label">@T("Plugins.Misc.Watermark.PaddingX")</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="padding-group">
+                                                <div class="padding-input">
+                                                    <label>X:</label>
+                                                    <input asp-for="PictureSettings.PaddingX" class="form-control" type="number" min="0" />
+                                                </div>
+                                                <div class="padding-input">
+                                                    <label>Y:</label>
+                                                    <input asp-for="PictureSettings.PaddingY" class="form-control" type="number" min="0" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @* Custom Position *@
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-label asp-for="PictureSettings.UseCustomPosition" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <input asp-for="PictureSettings.UseCustomPosition" type="checkbox" class="custom-position-toggle" data-target="pictureCustomFields" />
+                                            <div id="pictureCustomFields" class="custom-position-fields @(Model.PictureSettings.UseCustomPosition ? "visible" : "")">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label>X (%):</label>
+                                                        <input asp-for="PictureSettings.CustomX" class="form-control" type="number" min="0" max="100" step="1" />
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label>Y (%):</label>
+                                                        <input asp-for="PictureSettings.CustomY" class="form-control" type="number" min="0" max="100" step="1" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @* Opacity Slider *@
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-label asp-for="PictureSettings.Opacity" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="opacity-slider-group">
+                                                <input type="range" min="0" max="1" step="0.05"
+                                                       value="@Model.PictureSettings.Opacity.ToString(CultureInfo.InvariantCulture)"
+                                                       data-target="PictureSettings_Opacity"
+                                                       class="opacity-slider" />
+                                                <span class="opacity-value" id="pictureOpacityDisplay">@Model.PictureSettings.Opacity.ToString("F2", CultureInfo.InvariantCulture)</span>
+                                                <input type="hidden" id="PictureSettings_Opacity" name="PictureSettings.Opacity"
+                                                       value="@Model.PictureSettings.Opacity.ToString(CultureInfo.InvariantCulture)" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* ==================== BRAND STRIP ==================== *@
+                        <div class="card card-default">
+                            <div class="card-header">
+                                <i class="fas fa-ribbon mr-1"></i> @T("Plugins.Misc.Watermark.BrandStrip")
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="BrandStripEnabled_OverrideForStore" asp-input="BrandStripEnabled" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="BrandStripEnabled" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="BrandStripEnabled" />
+                                    </div>
+                                </div>
+                                <div id="brandStripSettings">
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-override-store-checkbox asp-for="BrandStripPlacement_OverrideForStore" asp-input="BrandStripPlacement" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                            <nop-label asp-for="BrandStripPlacement" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <select asp-for="BrandStripPlacement" asp-items="Model.AvailableBrandStripPositions" class="form-control"></select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-override-store-checkbox asp-for="BrandStripHeight_OverrideForStore" asp-input="BrandStripHeight" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                            <nop-label asp-for="BrandStripHeight" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <input asp-for="BrandStripHeight" class="form-control" type="number" min="1" max="30" />
+                                            <span asp-validation-for="BrandStripHeight"></span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-override-store-checkbox asp-for="BrandStripColor_OverrideForStore" asp-input="BrandStripColor" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                            <nop-label asp-for="BrandStripColor" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <input asp-for="BrandStripColor" class="jscolor form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-override-store-checkbox asp-for="BrandStripOpacity_OverrideForStore" asp-input="BrandStripOpacity" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                            <nop-label asp-for="BrandStripOpacity" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="opacity-slider-group">
+                                                <input type="range" min="0" max="1" step="0.05"
+                                                       value="@Model.BrandStripOpacity.ToString(CultureInfo.InvariantCulture)"
+                                                       data-target="BrandStripOpacity"
+                                                       class="opacity-slider" />
+                                                <span class="opacity-value" id="stripOpacityDisplay">@Model.BrandStripOpacity.ToString("F2", CultureInfo.InvariantCulture)</span>
+                                                <input type="hidden" id="BrandStripOpacity" name="BrandStripOpacity"
+                                                       value="@Model.BrandStripOpacity.ToString(CultureInfo.InvariantCulture)" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-override-store-checkbox asp-for="BrandStripText_OverrideForStore" asp-input="BrandStripText" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                            <nop-label asp-for="BrandStripText" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <input asp-for="BrandStripText" class="form-control" placeholder="www.yourstore.com" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <nop-override-store-checkbox asp-for="BrandStripTextColor_OverrideForStore" asp-input="BrandStripTextColor" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                            <nop-label asp-for="BrandStripTextColor" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <input asp-for="BrandStripTextColor" class="jscolor form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* ==================== COMMON SETTINGS ==================== *@
+                        <div class="card card-default">
+                            <div class="card-header">
+                                <i class="fas fa-cog mr-1"></i> @T("Plugins.Misc.Watermark.CommonSettings")
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="ApplyOnProductPictures_OverrideForStore" asp-input="ApplyOnProductPictures" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="ApplyOnProductPictures" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="ApplyOnProductPictures" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="ApplyOnCategoryPictures_OverrideForStore" asp-input="ApplyOnCategoryPictures" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="ApplyOnCategoryPictures" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="ApplyOnCategoryPictures" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="ApplyOnManufacturerPictures_OverrideForStore" asp-input="ApplyOnManufacturerPictures" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="ApplyOnManufacturerPictures" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="ApplyOnManufacturerPictures" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="WatermarkMinimumImageWidthForWatermark_OverrideForStore" asp-input="MinimumImageWidthForWatermark" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="MinimumImageWidthForWatermark" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="MinimumImageWidthForWatermark" />
+                                        <span asp-validation-for="MinimumImageWidthForWatermark"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="WatermarkMinimumImageHeightForWatermark_OverrideForStore" asp-input="MinimumImageHeightForWatermark" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="MinimumImageHeightForWatermark" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="MinimumImageHeightForWatermark" />
+                                        <span asp-validation-for="MinimumImageHeightForWatermark"></span>
+                                    </div>
+                                </div>
+
+                                @* Smart Sizing *@
+                                <hr />
+                                <h5 class="mb-3"><i class="fas fa-expand-arrows-alt mr-1"></i> @T("Plugins.Misc.Watermark.SmartSizing")</h5>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="MinimumWatermarkSizePx_OverrideForStore" asp-input="MinimumWatermarkSizePx" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="MinimumWatermarkSizePx" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input asp-for="MinimumWatermarkSizePx" class="form-control" type="number" min="0" />
+                                        <span class="form-text text-muted">Set to 0 to disable. Prevents unreadable tiny watermarks on small thumbnails.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="MaximumWatermarkSizePx_OverrideForStore" asp-input="MaximumWatermarkSizePx" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="MaximumWatermarkSizePx" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input asp-for="MaximumWatermarkSizePx" class="form-control" type="number" min="0" />
+                                        <span class="form-text text-muted">Set to 0 to disable. Caps watermark size on very large images.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Save Button *@
+                        <div class="card card-default">
+                            <div class="card-body">
+                                <div class="form-group row">
+                                    <div class="col-md-9 offset-md-3">
+                                        <button type="submit" name="save" class="btn btn-primary">
+                                            <i class="fas fa-save mr-1"></i> @T("Admin.Common.Save")
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="card card-default">
-                    <div class="card-header">
-                        @T("Plugins.Misc.Watermark.Picture")
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group row">
-                            <div class="col-md-3">
-                                <nop-override-store-checkbox asp-for="WatermarkPictureEnable_OverrideForStore" asp-input="WatermarkPictureEnable" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                <nop-label asp-for="WatermarkPictureEnable" />
-                            </div>
-                            <div class="col-md-9 watermark-picture">
-                                <nop-editor asp-for="WatermarkPictureEnable" />
-                            </div>
+
+                @* ==================== PREVIEW PANEL ==================== *@
+                <div class="col-md-4">
+                    <div class="card card-default preview-card">
+                        <div class="card-header">
+                            <i class="fas fa-eye mr-1"></i> @T("Plugins.Misc.Watermark.Preview")
                         </div>
-                        <div class="form-group row">
-                            <div class="col-md-3">
-                                <nop-override-store-checkbox asp-for="WatermarkPictureId_OverrideForStore" asp-input="PictureId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                <nop-label asp-for="PictureId" />
+                        <div class="card-body">
+                            <div class="preview-image-container" id="previewContainer">
+                                <div class="preview-placeholder" id="previewPlaceholder">
+                                    <i class="fas fa-image"></i>
+                                    <div>Click "Generate Preview" to see<br/>how your watermark will look</div>
+                                </div>
+                                <img id="previewImage" style="display:none;" alt="Watermark preview" />
                             </div>
-                            <div class="col-md-9 watermark-picture">
-                                <nop-editor asp-for="PictureId" />
-                                <span asp-validation-for="PictureId"></span>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <nop-override-store-checkbox asp-for="PictureSettings_OverrideForStore" asp-parent-container="picturesettings_group" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                        </div>
-                        <div id="picturesettings_group">
-                            <div class="form-group row">
-                                <div class="col-md-3">
-                                    <nop-label asp-for="PictureSettings.Size" />
-                                </div>
-                                <div class="col-md-9">
-                                    <nop-editor asp-for="PictureSettings.Size" />
-                                    <span asp-validation-for="PictureSettings.Size"></span>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <div class="col-md-3">
-                                    <div class="label-wrapper">
-                                        <label class="control-label">
-                                            @T("Plugins.Misc.Watermark.WatermarkPosition")
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-9">
-                                    <div class="form-group row">
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="PictureSettings.TopLeftCorner" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="PictureSettings.TopLeftCorner" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="PictureSettings.TopCenter" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="PictureSettings.TopCenter" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="PictureSettings.TopRightCorner" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="PictureSettings.TopRightCorner" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="PictureSettings.CenterLeft" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="PictureSettings.CenterLeft" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="PictureSettings.Center" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="PictureSettings.Center" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="PictureSettings.CenterRight" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="PictureSettings.CenterRight" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="PictureSettings.BottomLeftCorner" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="PictureSettings.BottomLeftCorner" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="PictureSettings.BottomCenter" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="PictureSettings.BottomCenter" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group row">
-                                                <div class="col-md-9">
-                                                    <nop-label asp-for="PictureSettings.BottomRightCorner" />
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <nop-editor asp-for="PictureSettings.BottomRightCorner" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <div class="col-md-3">
-                                    <nop-label asp-for="PictureSettings.Opacity" />
-                                </div>
-                                <div class="col-md-9">
-                                    <nop-editor asp-for="PictureSettings.Opacity" />
-                                    <span asp-validation-for="PictureSettings.Opacity"></span>
-                                </div>
-                            </div>
+                            <button type="button" class="btn btn-info btn-block" id="btnGeneratePreview">
+                                <i class="fas fa-magic mr-1"></i> Generate Preview
+                            </button>
+                            <div id="previewError" class="alert alert-warning mt-2" style="display:none;"></div>
+                            <small class="form-text text-muted mt-2">
+                                Preview uses a sample product image with your current (unsaved) settings.
+                                The watermark picture uses the last saved image.
+                            </small>
                         </div>
                     </div>
                 </div>
-            <div class="card card-default">
-                <div class="card-header">
-                    @T("Plugins.Misc.Watermark.CommonSettings")
-                </div>
-                <div class="card-body">
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <nop-override-store-checkbox asp-for="ApplyOnProductPictures_OverrideForStore" asp-input="ApplyOnProductPictures" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                            <nop-label asp-for="ApplyOnProductPictures" />
-                        </div>
-                        <div class="col-md-9">
-                            <nop-editor asp-for="ApplyOnProductPictures" />
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <nop-override-store-checkbox asp-for="ApplyOnCategoryPictures_OverrideForStore" asp-input="ApplyOnCategoryPictures" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                            <nop-label asp-for="ApplyOnCategoryPictures" />
-                        </div>
-                        <div class="col-md-9">
-                            <nop-editor asp-for="ApplyOnCategoryPictures" />
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <nop-override-store-checkbox asp-for="ApplyOnManufacturerPictures_OverrideForStore" asp-input="ApplyOnManufacturerPictures" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                            <nop-label asp-for="ApplyOnManufacturerPictures" />
-                        </div>
-                        <div class="col-md-9">
-                            <nop-editor asp-for="ApplyOnManufacturerPictures" />
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <nop-override-store-checkbox asp-for="WatermarkMinimumImageWidthForWatermark_OverrideForStore" asp-input="MinimumImageWidthForWatermark" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                            <nop-label asp-for="MinimumImageWidthForWatermark" />
-                        </div>
-                        <div class="col-md-9">
-                            <nop-editor asp-for="MinimumImageWidthForWatermark" />
-                            <span asp-validation-for="MinimumImageWidthForWatermark"></span>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <nop-override-store-checkbox asp-for="WatermarkMinimumImageHeightForWatermark_OverrideForStore" asp-input="MinimumImageHeightForWatermark" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                            <nop-label asp-for="MinimumImageHeightForWatermark" />
-                        </div>
-                        <div class="col-md-9">
-                            <nop-editor asp-for="MinimumImageHeightForWatermark" />
-                            <span asp-validation-for="MinimumImageHeightForWatermark"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card card-default">
-                <div class="card-body">
-                    <div class="form-group row">
-                        <div class="col-md-9 offset-md-3">
-                            <button type="submit" name="save" class="btn btn-primary">@T("Admin.Common.Save")</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
             </div>
         </div>
     </section>
 </form>
+
 <script>
-    function checkOverriddenStoreValue(obj, selector) {
-        var elementsArray = selector.split(",");
+$(function () {
+    // Knob for rotation
+    $('.dial').knob({
+        'min': 0,
+        'max': 360,
+        'angleOffset': -90,
+        'cursor': true
+    });
 
-        // first toggle appropriate hidden inputs for checkboxes
-        if ($(selector).is(':checkbox')) {
-            var name = $(selector).attr('name');
-            $('input:hidden[name="' + name + '"]').attr('disabled', !$(obj).is(':checked'));
-        }
+    // Opacity sliders - sync hidden field on drag
+    $('.opacity-slider').on('input', function () {
+        var val = parseFloat($(this).val()).toFixed(2);
+        var targetId = $(this).data('target');
+        $('#' + targetId).val(val);
+        $(this).siblings('.opacity-value').text(val);
+    });
+    // Sync hidden fields on page load so the value is always dot-decimal
+    $('.opacity-slider').each(function () {
+        var val = parseFloat($(this).val()).toFixed(2);
+        var targetId = $(this).data('target');
+        $('#' + targetId).val(val);
+    });
 
-        if (!$(obj).is(':checked')) {
-            $(selector).attr('disabled', true);
-            //Kendo UI elements are enabled/disabled some other way
-            $.each(elementsArray, function (key, value) {
-                var kenoduiElement;
-                if ($(value).length > 1) {
-                    for (let i = 0; i < $(value).length; i++) {
-                        var elem = $(value)[i];
-                        kenoduiElement = $(elem).data("kendoNumericTextBox") || $(value).data("kendoMultiSelect");
-                        if (kenoduiElement !== undefined && kenoduiElement !== null) {
-                            kenoduiElement.enable(false);
-                        }
-                    }
-                } else {
-                    kenoduiElement = $(value).data("kendoNumericTextBox") || $(value).data("kendoMultiSelect");
-                    if (kenoduiElement !== undefined && kenoduiElement !== null) {
-                        kenoduiElement.enable(false);
-                    }
-                }
-                
-            });
+    // Custom position toggle
+    $('.custom-position-toggle').on('change', function () {
+        var targetId = $(this).data('target');
+        if ($(this).is(':checked')) {
+            $('#' + targetId).addClass('visible');
+        } else {
+            $('#' + targetId).removeClass('visible');
         }
-        else {
-            $(selector).removeAttr('disabled');
-            //Kendo UI elements are enabled/disabled some other way
-            $.each(elementsArray, function (key, value) {
-                var kenoduiElement;
-                if ($(value).length > 1) {
-                    for (let i = 0; i < $(value).length; i++) {
-                        var elem = $(value)[i];
-                        kenoduiElement = $(elem).data("kendoNumericTextBox") || $(value).data("kendoMultiSelect");
-                        if (kenoduiElement !== undefined && kenoduiElement !== null) {
-                            kenoduiElement.enable();
-                        }
-                    }
+    });
+
+    // Position grid click handling
+    $('.position-cell').on('click', function () {
+        var $cell = $(this);
+        var $cb = $cell.find('input[type="checkbox"]');
+        var isChecked = $cb.prop('checked');
+        $cb.prop('checked', !isChecked);
+        $cell.toggleClass('active', !isChecked);
+    });
+
+    // Preview generation
+    $('#btnGeneratePreview').on('click', function () {
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Generating...');
+        $('#previewError').hide();
+
+        var formData = $('#watermarkConfigForm').serialize();
+
+        $.ajax({
+            url: '@Url.Action("PreviewWatermark", "MiscWatermark")',
+            type: 'POST',
+            data: formData,
+            success: function (response) {
+                if (response.success) {
+                    $('#previewPlaceholder').hide();
+                    $('#previewImage').attr('src', response.image).show();
                 } else {
-                    kenoduiElement = $(value).data("kendoNumericTextBox") || $(value).data("kendoMultiSelect");
-                    if (kenoduiElement !== undefined && kenoduiElement !== null) {
-                        kenoduiElement.enable();
-                    }
+                    $('#previewError').text(response.message).show();
                 }
-                
-            });
-        }
+            },
+            error: function () {
+                $('#previewError').text('Failed to generate preview. Please try again.').show();
+            },
+            complete: function () {
+                $btn.prop('disabled', false).html('<i class="fas fa-magic mr-1"></i> Generate Preview');
+            }
+        });
+    });
+
+    // jscolor init for dynamically added color pickers
+    if (typeof jscolor !== 'undefined') {
+        jscolor.installByClassName('jscolor');
     }
+});
 </script>

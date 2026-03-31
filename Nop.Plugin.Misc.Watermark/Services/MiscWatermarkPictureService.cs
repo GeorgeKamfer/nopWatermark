@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -23,6 +24,10 @@ namespace Nop.Plugin.Misc.Watermark.Services
 {
     public class MiscWatermarkPictureService : PictureService, IDisposable
     {
+        private const int MAX_FONT_SIZE = 2000;
+
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _thumbLocks = new();
+
         private readonly IRepository<ProductPicture> _productPictureRepository;
         private readonly IRepository<Category> _categoryRepository;
         private readonly IRepository<Manufacturer> _manufacturerRepository;
@@ -33,12 +38,13 @@ namespace Nop.Plugin.Misc.Watermark.Services
         private readonly MediaSettings _mediaSettings;
         private readonly IStoreContext _storeContext;
         private readonly AsyncLazy<SKImage> _watermarkImage;
-        
+
+        private bool? _pluginInstalled;
 
         private async Task<bool> IsPluginInstalledAsync()
         {
-            var descriptor = await _pluginService.GetPluginDescriptorBySystemNameAsync<WatermarkPlugin>("Misc.Watermark");
-            return descriptor != null;
+            _pluginInstalled ??= (await _pluginService.GetPluginDescriptorBySystemNameAsync<WatermarkPlugin>("Misc.Watermark")) != null;
+            return _pluginInstalled.Value;
         }
 
         public MiscWatermarkPictureService(
@@ -58,14 +64,15 @@ namespace Nop.Plugin.Misc.Watermark.Services
            IHttpContextAccessor httpContextAccessor,
            ILogger logger,
            IPluginService pluginService,
-           FontProvider fontProvider)
+           FontProvider fontProvider,
+           IProductAttributeService productAttributeService)
            : base(
                downloadService,
                httpContextAccessor,
                logger,
                fileProvider,
                productAttributeParser,
-               null, // Fix: Pass null for the missing IProductAttributeService parameter
+               productAttributeService,
                pictureRepository,
                pictureBinaryRepository,
                productPictureRepository,
@@ -132,7 +139,6 @@ namespace Nop.Plugin.Misc.Watermark.Services
                 if ((pictureBinary?.Length ?? 0) == 0)
                     return showDefaultPicture ? (await GetDefaultPictureUrlAsync(targetSize, defaultPictureType, storeLocation), picture) : (string.Empty, picture);
 
-                //we do not validate picture binary here to ensure that no exception ("Parameter is not valid") will be thrown
                 picture = await UpdatePictureAsync(picture.Id,
                     pictureBinary,
                     picture.MimeType,
@@ -145,7 +151,7 @@ namespace Nop.Plugin.Misc.Watermark.Services
 
             var seoFileName = picture.SeoFilename;
 
-            var storeId = (await EngineContext.Current.Resolve<IStoreContext>().GetCurrentStoreAsync()).Id;
+            var storeId = (await _storeContext.GetCurrentStoreAsync()).Id;
             var lastPart = await GetFileExtensionFromMimeTypeAsync(picture.MimeType);
             string thumbFileName;
             if (storeId == 1)
@@ -170,7 +176,7 @@ namespace Nop.Plugin.Misc.Watermark.Services
                         ? $"{picture.Id:0000000}_{seoFileName}_{targetSize}_{storeId}.{lastPart}"
                         : $"{picture.Id:0000000}_{targetSize}_{storeId}.{lastPart}";
             }
-            
+
             var thumbFilePath = await GetThumbLocalPathAsync(thumbFileName);
 
             if (await GeneratedThumbExistsAsync(thumbFilePath, thumbFileName))
@@ -178,40 +184,31 @@ namespace Nop.Plugin.Misc.Watermark.Services
 
             pictureBinary ??= await LoadPictureBinaryAsync(picture);
 
-            // guard: no data to decode
             if (pictureBinary == null || pictureBinary.Length == 0)
             {
-                // fall back to saving whatever we have (no watermark) so the page doesn't crash
                 await SaveThumbAsync(thumbFilePath, thumbFileName, picture?.MimeType ?? string.Empty, pictureBinary ?? Array.Empty<byte>());
                 return (await GetThumbUrlAsync(thumbFileName, storeLocation), picture);
             }
 
-            //the named mutex helps to avoid creating the same files in different threads,
-            //and does not decrease performance significantly, because the code is blocked only for the specific file.
-            //you should be very careful, mutexes cannot be used in with the await operation
-            //we can't use semaphore here, because it produces PlatformNotSupportedException exception on UNIX based systems
-            using var mutex = new Mutex(false, thumbFileName);
-            mutex.WaitOne();
+            var thumbLock = _thumbLocks.GetOrAdd(thumbFileName, _ => new SemaphoreSlim(1, 1));
+            await thumbLock.WaitAsync();
             try
             {
                 try
                 {
-                    // There is no sense of placing watermark on SVG image
                     if (picture.MimeType != MimeTypes.ImageSvg)
                     {
                         using var inputImage = SKBitmap.Decode(pictureBinary);
 
-                        // guard: decode failed (unsupported or corrupt image)
                         if (inputImage == null)
                         {
-                            // just save the original bytes without watermark
                             await SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary);
                         }
                         else
                         {
                             SKBitmap outputImage = inputImage;
 
-                            if (targetSize != 0) //resizing required
+                            if (targetSize != 0)
                                 try
                                 {
                                     var newSize =
@@ -236,20 +233,18 @@ namespace Nop.Plugin.Misc.Watermark.Services
                     }
                     else
                     {
-                        // SVG: nothing to watermark, just persist the original bytes
                         await SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary);
                     }
                 }
                 catch (Exception ex)
                 {
-                    // any SkiaSharp or processing failure: fall back to original bytes so the page still works
                     await _logger.ErrorAsync($"Error during watermark operation (picture Id {picture?.Id}): {ex.Message}", ex);
                     await SaveThumbAsync(thumbFilePath, thumbFileName, picture.MimeType, pictureBinary);
                 }
             }
             finally
             {
-                mutex.ReleaseMutex();
+                thumbLock.Release();
             }
 
             return (await GetThumbUrlAsync(thumbFileName, storeLocation), picture);
@@ -260,16 +255,27 @@ namespace Nop.Plugin.Misc.Watermark.Services
             var currentSettings = await GetSettingsAsync();
             var applyWatermark = IsWatermarkRequired(pictureId, currentSettings);
 
-            if (!applyWatermark || ((sourceImage.Height <= currentSettings.MinimumImageHeightForWatermark) &&
-                                    (sourceImage.Width <= currentSettings.MinimumImageWidthForWatermark)))
+            if (!applyWatermark || sourceImage.Height <= currentSettings.MinimumImageHeightForWatermark
+                                || sourceImage.Width <= currentSettings.MinimumImageWidthForWatermark)
                 return;
-            
-            if (currentSettings.WatermarkTextEnable && !string.IsNullOrEmpty(currentSettings.WatermarkText))
-                PlaceTextWatermark(sourceImage, currentSettings);
+
+            await ApplyWatermarksAsync(sourceImage, currentSettings);
+        }
+
+        internal async Task ApplyWatermarksAsync(SKBitmap sourceImage, WatermarkSettings settings)
+        {
+            if (settings.BrandStripEnabled)
+            {
+                var watermarkImg = await _watermarkImage.Task;
+                PlaceBrandStrip(sourceImage, watermarkImg, settings);
+            }
+
+            if (settings.WatermarkTextEnable && !string.IsNullOrEmpty(settings.WatermarkText))
+                PlaceTextWatermark(sourceImage, settings);
 
             var watermarkImage = await _watermarkImage.Task;
-            if (currentSettings.WatermarkPictureEnable && watermarkImage != null)
-                PlaceImageWatermark(sourceImage, watermarkImage, currentSettings);
+            if (settings.WatermarkPictureEnable && watermarkImage != null)
+                PlaceImageWatermark(sourceImage, watermarkImage, settings);
         }
 
         private static void PlaceImageWatermark(SKBitmap destImage, SKImage watermarkImage,
@@ -283,6 +289,10 @@ namespace Nop.Plugin.Misc.Watermark.Services
             if (calculatedWatermarkSize.Width == 0 || calculatedWatermarkSize.Height == 0)
                 return;
 
+            calculatedWatermarkSize = ClampWatermarkSize(calculatedWatermarkSize, currentSettings);
+            if (calculatedWatermarkSize.Width == 0 || calculatedWatermarkSize.Height == 0)
+                return;
+
             var alpha = (byte)(currentSettings.PictureSettings.Opacity * 255);
             using var paint = new SKPaint
             {
@@ -292,10 +302,18 @@ namespace Nop.Plugin.Misc.Watermark.Services
             };
 
             using var canvas = new SKCanvas(destImage);
-            foreach (var watermarkPosition in currentSettings.PictureSettings.PositionList.Select(position =>
-                     CalculateWatermarkPosition(position, destImage.Info.Size, calculatedWatermarkSize)))
-                canvas.DrawImage(watermarkImage, SKRectI.Create(watermarkPosition, calculatedWatermarkSize),
-                    paint);
+
+            if (currentSettings.PictureSettings.UseCustomPosition)
+            {
+                var pos = CalculateCustomPosition(currentSettings.PictureSettings, destImage.Info.Size, calculatedWatermarkSize);
+                canvas.DrawImage(watermarkImage, SKRectI.Create(pos, calculatedWatermarkSize), paint);
+            }
+            else
+            {
+                foreach (var watermarkPosition in currentSettings.PictureSettings.PositionList.Select(position =>
+                         CalculateWatermarkPosition(position, destImage.Info.Size, calculatedWatermarkSize, currentSettings.PictureSettings)))
+                    canvas.DrawImage(watermarkImage, SKRectI.Create(watermarkPosition, calculatedWatermarkSize), paint);
+            }
         }
 
         private void PlaceTextWatermark(SKBitmap sourceBitmap, WatermarkSettings currentSettings)
@@ -313,38 +331,192 @@ namespace Nop.Plugin.Misc.Watermark.Services
             var typeface = GetFontTypeface(currentSettings);
             var fontSize = ComputeMaxFontSize(typeface, text, textAngle, maxTextSize, out var rotatedTextSize);
 
-            using var paint = new SKPaint
+            if (fontSize < 2)
+                return;
+
+            using var fillPaint = new SKPaint
             {
                 Color = color,
                 Typeface = typeface,
                 TextSize = fontSize,
                 TextAlign = SKTextAlign.Center,
                 IsAntialias = true,
+                Style = SKPaintStyle.Fill,
             };
 
             var horizontalTextRect = new SKRect();
-            paint.MeasureText(text, ref horizontalTextRect);
+            fillPaint.MeasureText(text, ref horizontalTextRect);
+
+            SKPaint outlinePaint = null;
+            if (currentSettings.TextOutlineEnabled && !string.IsNullOrEmpty(currentSettings.TextOutlineColor))
+            {
+                var outlineColor = SKColor.Parse(currentSettings.TextOutlineColor);
+                outlineColor = outlineColor.WithAlpha((byte)(currentSettings.TextSettings.Opacity * 255));
+                var strokeWidth = Math.Max(1f, fontSize / 25f);
+                outlinePaint = new SKPaint
+                {
+                    Color = outlineColor,
+                    Typeface = typeface,
+                    TextSize = fontSize,
+                    TextAlign = SKTextAlign.Center,
+                    IsAntialias = true,
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = strokeWidth,
+                    StrokeJoin = SKStrokeJoin.Round,
+                };
+            }
 
             using var canvas = new SKCanvas(sourceBitmap);
-            foreach (var textPosition in currentSettings.TextSettings.PositionList.Select(position =>
-                     CalculateWatermarkPosition(position, sourceBitmap.Info.Size, rotatedTextSize)))
+
+            void DrawTextAtPosition(SKPointI textPosition)
             {
                 textPosition.Offset(rotatedTextSize.Width / 2, rotatedTextSize.Height / 2);
 
                 canvas.Save();
                 canvas.Translate(textPosition);
                 canvas.RotateDegrees(textAngle);
-                canvas.DrawText(text, 0, -horizontalTextRect.MidY, paint);
+
+                if (outlinePaint != null)
+                    canvas.DrawText(text, 0, -horizontalTextRect.MidY, outlinePaint);
+
+                canvas.DrawText(text, 0, -horizontalTextRect.MidY, fillPaint);
                 canvas.Restore();
             }
+
+            if (currentSettings.TextSettings.UseCustomPosition)
+            {
+                var pos = CalculateCustomPosition(currentSettings.TextSettings, sourceBitmap.Info.Size, rotatedTextSize);
+                DrawTextAtPosition(pos);
+            }
+            else
+            {
+                foreach (var textPosition in currentSettings.TextSettings.PositionList.Select(position =>
+                         CalculateWatermarkPosition(position, sourceBitmap.Info.Size, rotatedTextSize, currentSettings.TextSettings)))
+                {
+                    DrawTextAtPosition(textPosition);
+                }
+            }
+
+            outlinePaint?.Dispose();
+        }
+
+        private void PlaceBrandStrip(SKBitmap sourceBitmap, SKImage logoImage, WatermarkSettings settings)
+        {
+            var stripHeightPercent = Math.Clamp(settings.BrandStripHeight, 1, 30);
+            var stripHeight = (int)(sourceBitmap.Height * stripHeightPercent / 100.0);
+            if (stripHeight < 10) return;
+
+            var stripY = settings.BrandStripPlacement == BrandStripPosition.Top ? 0 : sourceBitmap.Height - stripHeight;
+            var stripColor = SKColor.TryParse(settings.BrandStripColor ?? "#000000", out var parsed) ? parsed : SKColors.Black;
+            var stripAlpha = (byte)(Math.Clamp(settings.BrandStripOpacity, 0, 1) * 255);
+            stripColor = stripColor.WithAlpha(stripAlpha);
+
+            using var canvas = new SKCanvas(sourceBitmap);
+
+            using (var stripPaint = new SKPaint { Color = stripColor, Style = SKPaintStyle.Fill })
+            {
+                canvas.DrawRect(0, stripY, sourceBitmap.Width, stripHeight, stripPaint);
+            }
+
+            var innerPadding = (int)(stripHeight * 0.15);
+            var contentHeight = stripHeight - (innerPadding * 2);
+            if (contentHeight < 4) return;
+
+            var contentX = innerPadding * 2;
+            var contentY = stripY + innerPadding;
+
+            if (settings.WatermarkPictureEnable && logoImage != null)
+            {
+                var logoAspect = (double)logoImage.Width / logoImage.Height;
+                var logoHeight = contentHeight;
+                var logoWidth = (int)(logoHeight * logoAspect);
+
+                using var logoPaint = new SKPaint
+                {
+                    FilterQuality = SKFilterQuality.High,
+                    Color = SKColors.White.WithAlpha(255),
+                };
+
+                var logoRect = new SKRect(contentX, contentY, contentX + logoWidth, contentY + logoHeight);
+                canvas.DrawImage(logoImage, logoRect, logoPaint);
+                contentX += logoWidth + innerPadding;
+            }
+
+            if (!string.IsNullOrEmpty(settings.BrandStripText))
+            {
+                var textColor = SKColor.TryParse(settings.BrandStripTextColor ?? "#FFFFFF", out var tc) ? tc : SKColors.White;
+                var typeface = GetFontTypeface(settings);
+
+                var textFontSize = contentHeight * 0.7f;
+                using var textPaint = new SKPaint
+                {
+                    Color = textColor,
+                    Typeface = typeface,
+                    TextSize = textFontSize,
+                    IsAntialias = true,
+                    Style = SKPaintStyle.Fill,
+                };
+
+                var textBounds = new SKRect();
+                textPaint.MeasureText(settings.BrandStripText, ref textBounds);
+
+                if (textBounds.Width > sourceBitmap.Width - contentX - innerPadding)
+                {
+                    var scale = (sourceBitmap.Width - contentX - innerPadding * 2) / textBounds.Width;
+                    textPaint.TextSize *= scale;
+                    textPaint.MeasureText(settings.BrandStripText, ref textBounds);
+                }
+
+                var textY = contentY + (contentHeight / 2f) - textBounds.MidY;
+                canvas.DrawText(settings.BrandStripText, contentX, textY, textPaint);
+            }
+        }
+
+        /// <summary>
+        /// Generates a preview image with watermark applied using the given settings.
+        /// </summary>
+        public async Task<byte[]> GeneratePreviewAsync(WatermarkSettings settings, int sourcePictureId = 0)
+        {
+            if (sourcePictureId == 0)
+            {
+                var firstPp = _productPictureRepository.Table.FirstOrDefault();
+                if (firstPp != null)
+                    sourcePictureId = firstPp.PictureId;
+            }
+
+            if (sourcePictureId == 0)
+                return null;
+
+            var picture = await base.GetPictureByIdAsync(sourcePictureId);
+            if (picture == null)
+                return null;
+
+            var binary = await LoadPictureBinaryAsync(picture);
+            if (binary == null || binary.Length == 0)
+                return null;
+
+            using var inputImage = SKBitmap.Decode(binary);
+            if (inputImage == null)
+                return null;
+
+            var previewMaxSize = 600;
+            var newSize = ScaleRectangleToFitBounds(new SKSizeI(previewMaxSize, previewMaxSize), inputImage.Info.Size);
+            using var resized = inputImage.Resize(newSize, SKFilterQuality.Medium) ?? inputImage;
+
+            await ApplyWatermarksAsync(resized, settings);
+
+            return resized.Encode(SKEncodedImageFormat.Png, 90).ToArray();
         }
 
         private static int ComputeMaxFontSize(SKTypeface typeface, string text, int angle, SKSizeI bounds,
             out SKSizeI actualRotatedTextSize)
         {
             actualRotatedTextSize = new SKSizeI();
-            using var paint = new SKPaint {Typeface = typeface};
-            for (var fontSize = 2;; fontSize++)
+            if (string.IsNullOrEmpty(text) || bounds.Width <= 0 || bounds.Height <= 0)
+                return 0;
+
+            using var paint = new SKPaint { Typeface = typeface };
+            for (var fontSize = 2; fontSize <= MAX_FONT_SIZE; fontSize++)
             {
                 paint.TextSize = fontSize;
                 var textRect = new SKRect();
@@ -356,13 +528,14 @@ namespace Nop.Plugin.Misc.Watermark.Services
 
                 actualRotatedTextSize = rotatedTextSize.ToSizeI();
             }
+            return MAX_FONT_SIZE;
         }
 
         private bool IsWatermarkRequired(int pictureId, WatermarkSettings settings)
         {
-            if (settings.ApplyOnProductPictures && _productPictureRepository.Table.Any(product => product.PictureId == pictureId)) 
+            if (settings.ApplyOnProductPictures && _productPictureRepository.Table.Any(product => product.PictureId == pictureId))
                 return true;
-            
+
             if (settings.ApplyOnCategoryPictures && _categoryRepository.Table.Any(category => category.PictureId == pictureId))
                 return true;
 
@@ -398,32 +571,59 @@ namespace Nop.Plugin.Misc.Watermark.Services
         private static SKSize CalculateRotatedRectSize(SKSize rectSize, double angleDeg)
         {
             var angleRad = angleDeg * Math.PI / 180;
-            var width = rectSize.Height * Math.Abs(Math.Sin(angleRad)) + 
+            var width = rectSize.Height * Math.Abs(Math.Sin(angleRad)) +
                         rectSize.Width * Math.Abs(Math.Cos(angleRad));
             var height = rectSize.Height * Math.Abs(Math.Cos(angleRad)) +
                          rectSize.Width * Math.Abs(Math.Sin(angleRad));
-            return new SKSize((float) width, (float) height);
+            return new SKSize((float)width, (float)height);
         }
-        
-        private static SKPointI CalculateWatermarkPosition(WatermarkPosition watermarkPosition, SKSizeI imageSize, SKSizeI watermarkSize)
+
+        private static SKSizeI ClampWatermarkSize(SKSizeI size, WatermarkSettings settings)
         {
+            if (settings.MinimumWatermarkSizePx > 0
+                && (size.Width < settings.MinimumWatermarkSizePx || size.Height < settings.MinimumWatermarkSizePx))
+                return new SKSizeI(0, 0);
+
+            if (settings.MaximumWatermarkSizePx > 0
+                && (size.Width > settings.MaximumWatermarkSizePx || size.Height > settings.MaximumWatermarkSizePx))
+            {
+                return ScaleRectangleToFitBounds(
+                    new SKSizeI(settings.MaximumWatermarkSizePx, settings.MaximumWatermarkSizePx), size);
+            }
+
+            return size;
+        }
+
+        private static SKPointI CalculateCustomPosition(CommonSettings posSettings, SKSizeI imageSize, SKSizeI watermarkSize)
+        {
+            var x = (int)((imageSize.Width - watermarkSize.Width) * Math.Clamp(posSettings.CustomX, 0, 100) / 100.0);
+            var y = (int)((imageSize.Height - watermarkSize.Height) * Math.Clamp(posSettings.CustomY, 0, 100) / 100.0);
+            return new SKPointI(x, y);
+        }
+
+        private static SKPointI CalculateWatermarkPosition(WatermarkPosition watermarkPosition, SKSizeI imageSize,
+            SKSizeI watermarkSize, CommonSettings posSettings)
+        {
+            var padX = posSettings?.PaddingX ?? 0;
+            var padY = posSettings?.PaddingY ?? 0;
             var position = new SKPointI();
+
             switch (watermarkPosition)
             {
                 case WatermarkPosition.TopLeftCorner:
-                    position.X = 0;
-                    position.Y = 0;
+                    position.X = padX;
+                    position.Y = padY;
                     break;
                 case WatermarkPosition.TopCenter:
                     position.X = (imageSize.Width / 2) - (watermarkSize.Width / 2);
-                    position.Y = 0;
+                    position.Y = padY;
                     break;
                 case WatermarkPosition.TopRightCorner:
-                    position.X = imageSize.Width - watermarkSize.Width;
-                    position.Y = 0;
+                    position.X = imageSize.Width - watermarkSize.Width - padX;
+                    position.Y = padY;
                     break;
                 case WatermarkPosition.CenterLeft:
-                    position.X = 0;
+                    position.X = padX;
                     position.Y = (imageSize.Height / 2) - (watermarkSize.Height / 2);
                     break;
                 case WatermarkPosition.Center:
@@ -431,20 +631,20 @@ namespace Nop.Plugin.Misc.Watermark.Services
                     position.Y = (imageSize.Height / 2) - (watermarkSize.Height / 2);
                     break;
                 case WatermarkPosition.CenterRight:
-                    position.X = imageSize.Width - watermarkSize.Width;
+                    position.X = imageSize.Width - watermarkSize.Width - padX;
                     position.Y = (imageSize.Height / 2) - (watermarkSize.Height / 2);
                     break;
                 case WatermarkPosition.BottomLeftCorner:
-                    position.X = 0;
-                    position.Y = imageSize.Height - watermarkSize.Height;
+                    position.X = padX;
+                    position.Y = imageSize.Height - watermarkSize.Height - padY;
                     break;
                 case WatermarkPosition.BottomCenter:
                     position.X = (imageSize.Width / 2) - (watermarkSize.Width / 2);
-                    position.Y = imageSize.Height - watermarkSize.Height;
+                    position.Y = imageSize.Height - watermarkSize.Height - padY;
                     break;
                 case WatermarkPosition.BottomRightCorner:
-                    position.X = imageSize.Width - watermarkSize.Width;
-                    position.Y = imageSize.Height - watermarkSize.Height;
+                    position.X = imageSize.Width - watermarkSize.Width - padX;
+                    position.Y = imageSize.Height - watermarkSize.Height - padY;
                     break;
             }
             return position;
@@ -461,24 +661,9 @@ namespace Nop.Plugin.Misc.Watermark.Services
                 : throw new InvalidOperationException("Fonts are missing");
         }
 
-        /// <summary>
-        /// Overrides the base implementation to guard against two crash scenarios that can
-        /// occur on the order-details page when an order was placed and later the product's
-        /// attribute values were deleted:
-        ///
-        ///   1. product is null  — the product itself was deleted after the order was placed.
-        ///      The base method calls ArgumentNullException.ThrowIfNull(product) which would
-        ///      surface as an unhandled exception.  We return null so nopCommerce shows the
-        ///      default "no image" placeholder instead of an error page.
-        ///
-        ///   2. attributeValue is null  — ParseProductAttributeValuesAsync returns null entries
-        ///      for attribute value IDs that no longer exist in the database (deleted after the
-        ///      order was placed).  The base foreach does not guard for null, so it throws a
-        ///      NullReferenceException at line 1111 of PictureService.cs.  We catch that here
-        ///      and fall back to the product's default (first) picture.
-        /// </summary>
-        public override async Task<Nop.Core.Domain.Media.Picture> GetProductPictureAsync(
-            Nop.Core.Domain.Catalog.Product product, string attributesXml)
+        /// <inheritdoc />
+        public override async Task<Picture> GetProductPictureAsync(
+            Product product, string attributesXml)
         {
             if (product == null)
                 return null;
@@ -501,7 +686,6 @@ namespace Nop.Plugin.Misc.Watermark.Services
         {
             if (_watermarkImage.IsStarted)
             {
-                // Dispose cannot be async; GetAwaiter().GetResult() is the safest sync-over-async pattern in this context.
                 var image = _watermarkImage.Task.GetAwaiter().GetResult();
                 image?.Dispose();
             }

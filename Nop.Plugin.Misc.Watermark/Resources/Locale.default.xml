@@ -30,6 +30,18 @@
   <LocaleResource Name="Plugins.Misc.Watermark.WatermarkTextRotatedDegree.Hint">
     <Value>Default value is 0 (the watermark text will be displayed horizontally). Change this value to display the watermark text diagonally</Value>
   </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.TextOutlineEnabled">
+    <Value>Enable text outline</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.TextOutlineEnabled.Hint">
+    <Value>Adds a contrasting outline around the text watermark for better visibility on any background color</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.TextOutlineColor">
+    <Value>Text outline color</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.TextOutlineColor.Hint">
+    <Value>Select the outline color. Use a contrasting color to the text (e.g. white outline on dark text)</Value>
+  </LocaleResource>
   <LocaleResource Name="Plugins.Misc.Watermark.WatermarkPictureEnable">
     <Value>Enable picture watermark</Value>
   </LocaleResource>
@@ -46,13 +58,13 @@
     <Value>Please enter a value between {0} and {1}</Value>
   </LocaleResource>
   <LocaleResource Name="Plugins.Misc.Watermark.Size.Hint">
-    <Value>Enter the text size relative to the image size in % (1-100)</Value>
+    <Value>Enter the size relative to the image size in % (1-100)</Value>
   </LocaleResource>
   <LocaleResource Name="Plugins.Misc.Watermark.WatermarkPosition">
     <Value>Position</Value>
   </LocaleResource>
   <LocaleResource Name="Plugins.Misc.Watermark.WatermarkPosition.Hint">
-    <Value>Select the position where watermark will be displayed</Value>
+    <Value>Click cells to toggle watermark positions. Multiple positions can be selected.</Value>
   </LocaleResource>
   <LocaleResource Name="Plugins.Misc.Watermark.TopLeftCornerPosition">
     <Value>Top left</Value>
@@ -106,12 +118,108 @@
     <Value>Minimum image width for watermark</Value>
   </LocaleResource>
   <LocaleResource Name="Plugins.Misc.Watermark.WatermarkMinimumImageWidth.Hint">
-    <Value>Enter minimum image width for watermark. Watermarks will only be displayed on images that are wider than the specified width. If width = 0, the watermark will be applied for all image sizes</Value>
+    <Value>Watermarks will only be displayed on images wider than this value. Set to 0 to apply to all sizes</Value>
   </LocaleResource>
   <LocaleResource Name="Plugins.Misc.Watermark.WatermarkMinimumImageHeight">
     <Value>Minimum image height for watermark</Value>
   </LocaleResource>
   <LocaleResource Name="Plugins.Misc.Watermark.WatermarkMinimumImageHeight.Hint">
-    <Value>Enter minimum image height for watermark. Watermarks will only be displayed on images that are higher than the specified height. If height = 0, the watermark will be applied for all image sizes</Value>
+    <Value>Watermarks will only be displayed on images taller than this value. Set to 0 to apply to all sizes</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.PaddingX">
+    <Value>Horizontal padding (px)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.PaddingX.Hint">
+    <Value>Pixel offset from the left/right edge of the image. Keeps the watermark from sitting flush against the border</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.PaddingY">
+    <Value>Vertical padding (px)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.PaddingY.Hint">
+    <Value>Pixel offset from the top/bottom edge of the image. Keeps the watermark from sitting flush against the border</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.UseCustomPosition">
+    <Value>Use custom position</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.UseCustomPosition.Hint">
+    <Value>Enable to place the watermark at an exact X/Y percentage position instead of using the grid presets</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.CustomX">
+    <Value>Custom X position (%)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.CustomX.Hint">
+    <Value>Horizontal position as a percentage (0 = left edge, 50 = center, 100 = right edge)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.CustomY">
+    <Value>Custom Y position (%)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.CustomY.Hint">
+    <Value>Vertical position as a percentage (0 = top edge, 50 = center, 100 = bottom edge)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.MinimumWatermarkSizePx">
+    <Value>Minimum watermark size (px)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.MinimumWatermarkSizePx.Hint">
+    <Value>If the calculated watermark would be smaller than this many pixels, skip it entirely. Prevents unreadable tiny watermarks. Set to 0 to disable</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.MaximumWatermarkSizePx">
+    <Value>Maximum watermark size (px)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.MaximumWatermarkSizePx.Hint">
+    <Value>Caps the watermark at this pixel size on very large images. Prevents disproportionately huge watermarks. Set to 0 to disable</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStrip">
+    <Value>Brand Strip</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripEnabled">
+    <Value>Enable brand strip</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripEnabled.Hint">
+    <Value>Adds a semi-transparent bar at the top or bottom of the image with your logo and/or website URL</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripPosition">
+    <Value>Strip position</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripPosition.Hint">
+    <Value>Place the brand strip at the top or bottom of the image</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripHeight">
+    <Value>Strip height (%)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripHeight.Hint">
+    <Value>Height of the brand strip as a percentage of the image height (1-30)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripColor">
+    <Value>Strip background color</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripColor.Hint">
+    <Value>Background color of the brand strip</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripOpacity">
+    <Value>Strip opacity</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripOpacity.Hint">
+    <Value>Transparency of the brand strip (0 = transparent, 1 = opaque)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripText">
+    <Value>Brand text / URL</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripText.Hint">
+    <Value>Text to display inside the strip, e.g. your website URL (www.yourstore.com)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripTextColor">
+    <Value>Brand text color</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.BrandStripTextColor.Hint">
+    <Value>Color of the text inside the brand strip</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.Preview">
+    <Value>Preview</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.Preview.Hint">
+    <Value>Click Generate Preview to see how the watermark will look on a sample product image using current settings</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Misc.Watermark.SmartSizing">
+    <Value>Smart Sizing</Value>
   </LocaleResource>
 </Language>

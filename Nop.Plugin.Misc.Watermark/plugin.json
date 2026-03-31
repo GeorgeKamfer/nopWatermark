@@ -2,7 +2,7 @@
     "Group": "Plugins Misc",
     "FriendlyName": "Nop Watermark",
     "SystemName": "Misc.Watermark",
-    "Version": "1.0.9",
+    "Version": "2.0.0",
     "SupportedVersions": [ "4.70" ],
     "Author": "GMK Solutions",
     "DisplayOrder": 1,

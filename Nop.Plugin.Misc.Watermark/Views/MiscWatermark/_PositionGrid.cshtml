@@ -1,0 +1,29 @@
+@{
+    var prefix = (string)ViewData["Prefix"];
+    var settings = (Nop.Plugin.Misc.Watermark.Models.CommonWatermarkSettings)ViewData["Settings"];
+
+    var positions = new[]
+    {
+        new { Name = "TopLeftCorner", Label = "TL", Active = settings.TopLeftCorner },
+        new { Name = "TopCenter", Label = "TC", Active = settings.TopCenter },
+        new { Name = "TopRightCorner", Label = "TR", Active = settings.TopRightCorner },
+        new { Name = "CenterLeft", Label = "CL", Active = settings.CenterLeft },
+        new { Name = "Center", Label = "C", Active = settings.Center },
+        new { Name = "CenterRight", Label = "CR", Active = settings.CenterRight },
+        new { Name = "BottomLeftCorner", Label = "BL", Active = settings.BottomLeftCorner },
+        new { Name = "BottomCenter", Label = "BC", Active = settings.BottomCenter },
+        new { Name = "BottomRightCorner", Label = "BR", Active = settings.BottomRightCorner },
+    };
+}
+<div class="position-grid">
+    @foreach (var pos in positions)
+    {
+        var fieldName = $"{prefix}.{pos.Name}";
+        var cssClass = pos.Active ? "position-cell active" : "position-cell";
+        <div class="@cssClass" title="@pos.Name">
+            <input type="checkbox" name="@fieldName" value="true" @(pos.Active ? "checked" : "") />
+            <input type="hidden" name="@fieldName" value="false" />
+            @pos.Label
+        </div>
+    }
+</div>
